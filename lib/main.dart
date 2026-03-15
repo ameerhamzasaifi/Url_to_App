@@ -1,121 +1,294 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:webview_flutter/webview_flutter.dart';
+import 'package:webview_flutter_android/webview_flutter_android.dart';
+import 'package:webview_flutter_wkwebview/webview_flutter_wkwebview.dart';
+import 'package:flutter/foundation.dart';
+
+// ─8─8─8─8─8─8─8─8─8─8─8─8─8─8─8─8─8─8─8─8─8─8─8─8─8─8─8─8─8─8─8─8─8─8─8─8─8─8─8─8─8─8─8
+//  CONFIGURE YOUR URL HERE
+//  Or run:  dart run scripts/set_url.dart https://example.com
+// ─*─*─*─*─*─*─*─*─*─*─*─*─*─*─*─*─*─*─*─*─*─*─*─*─*─*─*─*─*─*─*─*─*─*─*─*─*─*─*─*─*─*─*
+const String kHomeUrl = 'https://flutter.dev';
+// ─────────────────────────────────────────────
+
+// if you bore i am recommending a good anime to watch "Link click" very interesting anime about a guy who can enter photos and experience the moment when the photo was taken, it has 12 episodes and is very emotional and has a good story, i really recommend it to everyone who loves anime with good story and emotional moments
+
+//  APP LAUNCHER NAME — shown under the icon on the home screen
+const String kAppName = 'My App';
+// ─────────────────────────────────────────────
 
 void main() {
+  WidgetsFlutterBinding.ensureInitialized();
+
+  // Register the correct WebView platform implementation for each OS BEFORE any WebViewController usage.
+  switch (defaultTargetPlatform) {
+    case TargetPlatform.android:
+      WebViewPlatform.instance = AndroidWebViewPlatform();
+      break;
+    case TargetPlatform.iOS:
+      WebViewPlatform.instance = WebKitWebViewPlatform();
+      break;
+    default:
+      // For other platforms (Linux, macOS, Windows, Fuchsia, Web)
+      break;
+  }
+
   runApp(const MyApp());
 }
 
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
 
-  // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Flutter Demo',
+      title: kAppName,
+      debugShowCheckedModeBanner: false,
       theme: ThemeData(
-        // This is the theme of your application.
-        //
-        // TRY THIS: Try running your application with "flutter run". You'll see
-        // the application has a purple toolbar. Then, without quitting the app,
-        // try changing the seedColor in the colorScheme below to Colors.green
-        // and then invoke "hot reload" (save your changes or press the "hot
-        // reload" button in a Flutter-supported IDE, or press "r" if you used
-        // the command line to start the app).
-        //
-        // Notice that the counter didn't reset back to zero; the application
-        // state is not lost during the reload. To reset the state, use hot
-        // restart instead.
-        //
-        // This works for code too, not just values: Most code changes can be
-        // tested with just a hot reload.
-        colorScheme: .fromSeed(seedColor: Colors.deepPurple),
+        colorScheme: ColorScheme.fromSeed(seedColor: Colors.blueGrey),
+        useMaterial3: true,
       ),
-      home: const MyHomePage(title: 'Flutter Demo Home Page'),
+      home: const WebAppShell(),
     );
   }
 }
 
-class MyHomePage extends StatefulWidget {
-  const MyHomePage({super.key, required this.title});
-
-  // This widget is the home page of your application. It is stateful, meaning
-  // that it has a State object (defined below) that contains fields that affect
-  // how it looks.
-
-  // This class is the configuration for the state. It holds the values (in this
-  // case the title) provided by the parent (in this case the App widget) and
-  // used by the build method of the State. Fields in a Widget subclass are
-  // always marked "final".
-
-  final String title;
+class WebAppShell extends StatefulWidget {
+  const WebAppShell({super.key});
 
   @override
-  State<MyHomePage> createState() => _MyHomePageState();
+  State<WebAppShell> createState() => _WebAppShellState();
 }
 
-class _MyHomePageState extends State<MyHomePage> {
-  int _counter = 0;
+class _WebAppShellState extends State<WebAppShell> {
+  late final WebViewController? _controller;
+  bool _isLoading = true;
+  String _currentUrl = kHomeUrl;
+  String? _errorMessage;
+  bool _isSupported = true;
 
-  void _incrementCounter() {
-    setState(() {
-      // This call to setState tells the Flutter framework that something has
-      // changed in this State, which causes it to rerun the build method below
-      // so that the display can reflect the updated values. If we changed
-      // _counter without calling setState(), then the build method would not be
-      // called again, and so nothing would appear to happen.
-      _counter++;
-    });
+  @override
+  void initState() {
+    super.initState();
+    // Check if WebView is supported on this platform
+    if (defaultTargetPlatform == TargetPlatform.android ||
+        defaultTargetPlatform == TargetPlatform.iOS) {
+      _isSupported = true;
+      _controller = WebViewController()
+        ..setJavaScriptMode(JavaScriptMode.unrestricted)
+        ..setNavigationDelegate(
+          NavigationDelegate(
+            onPageStarted: (url) {
+              setState(() {
+                _isLoading = true;
+                _currentUrl = url;
+                _errorMessage = null;
+              });
+            },
+            onPageFinished: (url) {
+              setState(() {
+                _isLoading = false;
+                _currentUrl = url;
+              });
+            },
+            onWebResourceError: (error) {
+              setState(() {
+                _isLoading = false;
+                _errorMessage = error.description;
+              });
+            },
+          ),
+        )
+        ..loadRequest(Uri.parse(kHomeUrl));
+    } else {
+      _isSupported = false;
+      _controller = null;
+    }
+  }
+
+  /// Returns true if [url] is considered the "home" — i.e. it points to the
+  /// same origin root as [kHomeUrl] (with or without trailing slash).
+  bool _isHomePage(String url) {
+    try {
+      final home = Uri.parse(kHomeUrl);
+      final current = Uri.parse(url);
+
+      // Same scheme + host + port?
+      if (home.scheme != current.scheme) return false;
+      if (home.host != current.host) return false;
+      if (home.port != current.port) return false;
+
+      // The home URL's path defines the "root" for this app.
+      // Normalise by stripping trailing slashes.
+      String normHome = home.path.replaceAll(RegExp(r'/+$'), '');
+      String normCurrent = current.path.replaceAll(RegExp(r'/+$'), '');
+      if (normHome.isEmpty) normHome = '';
+      if (normCurrent.isEmpty) normCurrent = '';
+
+      return normHome == normCurrent;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  Future<bool> _onWillPop() async {
+    if (_controller == null) return true;
+
+    // If we can go back in webview history → go back.
+    if (await _controller.canGoBack()) {
+      // But only if going back doesn't take us *off* the home page.
+      // We let the WebView go back; if the resulting page is home and the
+      // user presses back again, we'll then show the exit dialog.
+      _controller.goBack();
+      return false; // don't pop the Flutter route
+    }
+
+    // We're at the top of the webview history.
+    // If current page is (or is below) home → prompt exit.
+    if (_isHomePage(_currentUrl)) {
+      return await _showExitDialog();
+    }
+
+    // Somehow at top of history but not on home (e.g. navigated away with
+    // JS replace). Load home instead of exiting.
+    _controller.loadRequest(Uri.parse(kHomeUrl));
+    return false;
+  }
+
+  Future<bool> _showExitDialog() async {
+    final result = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Exit App?'),
+        content: const Text('Do you want to exit the application?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: const Text('Stay'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(ctx).pop(true),
+            child: const Text('Exit'),
+          ),
+        ],
+      ),
+    );
+    return result ?? false;
   }
 
   @override
   Widget build(BuildContext context) {
-    // This method is rerun every time setState is called, for instance as done
-    // by the _incrementCounter method above.
-    //
-    // The Flutter framework has been optimized to make rerunning build methods
-    // fast, so that you can just rebuild anything that needs updating rather
-    // than having to individually change instances of widgets.
-    return Scaffold(
-      appBar: AppBar(
-        // TRY THIS: Try changing the color here to a specific color (to
-        // Colors.amber, perhaps?) and trigger a hot reload to see the AppBar
-        // change color while the other colors stay the same.
-        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-        // Here we take the value from the MyHomePage object that was created by
-        // the App.build method, and use it to set our appbar title.
-        title: Text(widget.title),
+    // Show a message for unsupported platforms
+    if (!_isSupported) {
+      return Scaffold(
+        appBar: AppBar(title: const Text('Not Supported')),
+        body: Center(
+          child: Padding(
+            padding: const EdgeInsets.all(32),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Icon(
+                  Icons.warning_rounded,
+                  size: 64,
+                  color: Colors.orange,
+                ),
+                const SizedBox(height: 16),
+                const Text(
+                  'WebView Not Supported',
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'This app requires WebView support, which is available on Android and iOS.\n\nVisit the URL manually: $kHomeUrl',
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(color: Colors.grey),
+                ),
+                const SizedBox(height: 24),
+                FilledButton.icon(
+                  onPressed: () {
+                    // Could add intent to open URL in browser here
+                  },
+                  icon: const Icon(Icons.open_in_browser),
+                  label: const Text('Open in Browser'),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+    }
+
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, _) async {
+        if (didPop) return;
+        final shouldExit = await _onWillPop();
+        if (shouldExit && context.mounted) {
+          SystemNavigator.pop();
+        }
+      },
+      child: Scaffold(
+        body: SafeArea(
+          child: Stack(
+            children: [
+              if (_errorMessage != null)
+                _ErrorView(
+                  message: _errorMessage!,
+                  onRetry: () {
+                    setState(() => _errorMessage = null);
+                    _controller!.reload();
+                  },
+                )
+              else
+                WebViewWidget(controller: _controller!),
+              if (_isLoading)
+                const LinearProgressIndicator(
+                  minHeight: 3,
+                  backgroundColor: Colors.transparent,
+                ),
+            ],
+          ),
+        ),
       ),
-      body: Center(
-        // Center is a layout widget. It takes a single child and positions it
-        // in the middle of the parent.
+    );
+  }
+}
+
+class _ErrorView extends StatelessWidget {
+  const _ErrorView({required this.message, required this.onRetry});
+  final String message;
+  final VoidCallback onRetry;
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(32),
         child: Column(
-          // Column is also a layout widget. It takes a list of children and
-          // arranges them vertically. By default, it sizes itself to fit its
-          // children horizontally, and tries to be as tall as its parent.
-          //
-          // Column has various properties to control how it sizes itself and
-          // how it positions its children. Here we use mainAxisAlignment to
-          // center the children vertically; the main axis here is the vertical
-          // axis because Columns are vertical (the cross axis would be
-          // horizontal).
-          //
-          // TRY THIS: Invoke "debug painting" (choose the "Toggle Debug Paint"
-          // action in the IDE, or press "p" in the console), to see the
-          // wireframe for each widget.
-          mainAxisAlignment: .center,
+          mainAxisSize: MainAxisSize.min,
           children: [
-            const Text('You have pushed the button this many times:'),
+            const Icon(Icons.wifi_off_rounded, size: 64, color: Colors.grey),
+            const SizedBox(height: 16),
+            const Text(
+              'Could not load page',
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+            ),
+            const SizedBox(height: 8),
             Text(
-              '$_counter',
-              style: Theme.of(context).textTheme.headlineMedium,
+              message,
+              textAlign: TextAlign.center,
+              style: const TextStyle(color: Colors.grey),
+            ),
+            const SizedBox(height: 24),
+            FilledButton.icon(
+              onPressed: onRetry,
+              icon: const Icon(Icons.refresh),
+              label: const Text('Retry'),
             ),
           ],
         ),
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _incrementCounter,
-        tooltip: 'Increment',
-        child: const Icon(Icons.add),
       ),
     );
   }
