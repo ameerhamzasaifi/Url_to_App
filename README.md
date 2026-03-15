@@ -1,6 +1,7 @@
 # url_to_app
 
-Converts URLs into native iOS and Android apps.
+Converts URLs into native iOS and Android apps. 
+(Using Flutter Framework)
 
 ## Quick Start
 
