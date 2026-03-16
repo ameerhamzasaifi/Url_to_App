@@ -2,7 +2,7 @@
 // scripts/set_url.dart
 //
 // Usage:
-//   dart run scripts/set_url.dart https://flutter.dev
+//   dart run scripts/set_url.dart https://flutter.dev "Flutter"
 //
 // What it does:
 //   1. Updates the kHomeUrl constant inside lib/main.dart

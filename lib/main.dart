@@ -185,11 +185,11 @@ class _WebAppShellState extends State<WebAppShell> {
                   message: _errorMessage!,
                   onRetry: () {
                     setState(() => _errorMessage = null);
-                    _controller!.reload();
+                    _controller.reload();
                   },
                 )
               else
-                WebViewWidget(controller: _controller!),
+                WebViewWidget(controller: _controller),
               if (_isLoading)
                 const LinearProgressIndicator(
                   minHeight: 3,
