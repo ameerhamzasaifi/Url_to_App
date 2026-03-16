@@ -5,6 +5,8 @@ Converts any URL into a native iOS and Android app using Flutter's WebView.
 ## Quick Start
 
 ```bash
+cd url_to_app
+
 # Set URL and app name (automatically updates pubspec.yaml)
 dart run scripts/config.dart https://example.com "My App"
 
