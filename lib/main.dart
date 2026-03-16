@@ -9,13 +9,13 @@ import 'package:flutter/foundation.dart';
 //  CONFIGURE YOUR URL HERE
 //  Or run:  dart run scripts/set_url.dart https://example.com
 // ─*─*─*─*─*─*─*─*─*─*─*─*─*─*─*─*─*─*─*─*─*─*─*─*─*─*─*─*─*─*─*─*─*─*─*─*─*─*─*─*─*─*─*
-const String kHomeUrl = 'https://flutter.dev';
+const String kHomeUrl = 'https://youtube.com';
 // ─────────────────────────────────────────────
 
 // if you bore i am recommending a good anime to watch "Link click" very interesting anime about a guy who can enter photos and experience the moment when the photo was taken, it has 12 episodes and is very emotional and has a good story, i really recommend it to everyone who loves anime with good story and emotional moments
 
 //  APP LAUNCHER NAME — shown under the icon on the home screen
-const String kAppName = 'Flutter';
+const String kAppName = 'Youtubwe';
 // ─────────────────────────────────────────────
 
 void main() {
@@ -60,37 +60,51 @@ class WebAppShell extends StatefulWidget {
   State<WebAppShell> createState() => _WebAppShellState();
 }
 
-class _WebAppShellState extends State<WebAppShell> {
+class _WebAppShellState extends State<WebAppShell>
+    with AutomaticKeepAliveClientMixin {
   late final WebViewController _controller;
   bool _isLoading = true;
   String _currentUrl = kHomeUrl;
   String? _errorMessage;
 
   @override
+  bool get wantKeepAlive => true;
+
+  @override
   void initState() {
     super.initState();
+    _initializeWebView();
+  }
+
+  void _initializeWebView() {
     _controller = WebViewController()
       ..setJavaScriptMode(JavaScriptMode.unrestricted)
       ..setNavigationDelegate(
         NavigationDelegate(
           onPageStarted: (url) {
-            setState(() {
-              _isLoading = true;
-              _currentUrl = url;
-              _errorMessage = null;
-            });
+            if (mounted) {
+              setState(() {
+                _isLoading = true;
+                _currentUrl = url;
+                _errorMessage = null;
+              });
+            }
           },
           onPageFinished: (url) {
-            setState(() {
-              _isLoading = false;
-              _currentUrl = url;
-            });
+            if (mounted) {
+              setState(() {
+                _isLoading = false;
+                _currentUrl = url;
+              });
+            }
           },
           onWebResourceError: (error) {
-            setState(() {
-              _isLoading = false;
-              _errorMessage = error.description;
-            });
+            if (mounted) {
+              setState(() {
+                _isLoading = false;
+                _errorMessage = error.description;
+              });
+            }
           },
         ),
       )
@@ -184,8 +198,10 @@ class _WebAppShellState extends State<WebAppShell> {
                 _ErrorView(
                   message: _errorMessage!,
                   onRetry: () {
-                    setState(() => _errorMessage = null);
-                    _controller.reload();
+                    if (mounted) {
+                      setState(() => _errorMessage = null);
+                      _controller.reload();
+                    }
                   },
                 )
               else
