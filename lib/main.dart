@@ -9,13 +9,13 @@ import 'package:flutter/foundation.dart';
 //  CONFIGURE YOUR URL HERE
 //  Or run:  dart run scripts/set_url.dart https://example.com
 // ─*─*─*─*─*─*─*─*─*─*─*─*─*─*─*─*─*─*─*─*─*─*─*─*─*─*─*─*─*─*─*─*─*─*─*─*─*─*─*─*─*─*─*
-const String kHomeUrl = 'https://youtube.com';
+const String kHomeUrl = 'https://flutter.dev';
 // ─────────────────────────────────────────────
 
 // if you bore i am recommending a good anime to watch "Link click" very interesting anime about a guy who can enter photos and experience the moment when the photo was taken, it has 12 episodes and is very emotional and has a good story, i really recommend it to everyone who loves anime with good story and emotional moments
 
 //  APP LAUNCHER NAME — shown under the icon on the home screen
-const String kAppName = 'Youtubwe';
+const String kAppName = 'URL to App';
 // ─────────────────────────────────────────────
 
 void main() {

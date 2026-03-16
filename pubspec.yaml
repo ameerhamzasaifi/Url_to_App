@@ -1,4 +1,4 @@
-name: youtubwe
+name: url_to_app
 description: "A Flutter WebView app — wraps any URL as a native app."
 publish_to: 'none'
 

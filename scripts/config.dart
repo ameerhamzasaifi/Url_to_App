@@ -273,10 +273,28 @@ Future<void> _updateAppName(String appName) async {
   print('📛 Updating app name → $appName');
 
   // Convert app name to valid Dart package name (lowercase, replace spaces with underscores)
-  final packageName = appName
+  var packageName = appName
       .toLowerCase()
       .replaceAll(RegExp(r'[^a-z0-9_]+'), '_')
       .replaceAll(RegExp(r'^_+|_+$'), '');
+
+  // Check for reserved names that conflict with dependencies
+  final reservedNames = {
+    'flutter',
+    'flutter_test',
+    'flutter_lints',
+    'flutter_launcher_icons',
+    'webview_flutter',
+    'webview_flutter_android',
+    'webview_flutter_wkwebview',
+    'cupertino_icons',
+    'http',
+  };
+
+  if (reservedNames.contains(packageName)) {
+    packageName += '_app';
+    print('ℹ️  Reserved name detected, renaming to: $packageName');
+  }
 
   if (packageName.isEmpty) {
     stderr.writeln('Invalid app name format');
