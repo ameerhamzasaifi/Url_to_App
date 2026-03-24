@@ -96,3 +96,13 @@ assets/icon/icon.png      - App icon (auto-downloaded)
 - Reserved package names (flutter, flutter_test, etc.) are automatically suffixed with "_app"
 - Screen rotation is handled gracefully without errors
 - After updating package ID, run `flutter clean` before rebuilding
+
+## Star History
+
+<a href="https://www.star-history.com/?repos=ameerhamzasaifi%2FUrl_to_App&type=date&legend=bottom-right">
+ <picture>
+   <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/image?repos=ameerhamzasaifi/Url_to_App&type=date&theme=dark&legend=bottom-right" />
+   <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/image?repos=ameerhamzasaifi/Url_to_App&type=date&legend=bottom-right" />
+   <img alt="Star History Chart" src="https://api.star-history.com/image?repos=ameerhamzasaifi/Url_to_App&type=date&legend=bottom-right" />
+ </picture>
+</a>
