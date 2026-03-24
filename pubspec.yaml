@@ -1,5 +1,5 @@
 name: url_to_app
-description: "A Flutter WebView app — wraps any URL as a native app."
+description: "Wraps any URL as a native iOS/Android app using Flutter WebView."
 publish_to: 'none'
 
 version: 1.0.0+1
@@ -11,29 +11,20 @@ dependencies:
   flutter:
     sdk: flutter
   cupertino_icons: ^1.0.8
-  # WebView
   webview_flutter: ^4.10.0
   webview_flutter_android: ^4.3.0
   webview_flutter_wkwebview: ^3.17.0
-  # Fetch favicon at runtime for dynamic icon (used by set_url script)
   http: ^1.2.2
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
   flutter_lints: ^6.0.0
-  # Generates launcher icons from an image file
   flutter_launcher_icons: ^0.14.3
 
 flutter:
   uses-material-design: true
 
-# ─────────────────────────────────────────────────────────────────────────────
-# Launcher icon configuration.
-# Run:  dart run flutter_launcher_icons
-# The icon image is fetched by scripts/fetch_favicon.dart and saved to
-# assets/icon/icon.png  — or you can drop any PNG there manually.
-# ─────────────────────────────────────────────────────────────────────────────
 flutter_launcher_icons:
   android: true
   ios: true

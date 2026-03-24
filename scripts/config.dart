@@ -1,18 +1,4 @@
 #!/usr/bin/env dart
-// scripts/config.dart
-//
-// Usage:
-//   dart run scripts/config.dart https://flutter.dev "Flutter"
-//
-// What it does:
-//   1. Updates the kHomeUrl constant inside lib/main.dart
-//   2. Downloads the site's favicon and saves it to assets/icon/icon.png
-//   3. Runs `dart run flutter_launcher_icons` to regenerate launcher icons
-//   4. Updates app name across platforms
-//   5. Edits package name in pubspec.yaml and platform configs
-//
-// Requirements:
-//   flutter pub get   (must be run once first)
 
 import 'dart:io';
 
@@ -90,7 +76,7 @@ Future<void> main(List<String> args) async {
   print('📌 Setting home URL → $url');
   if (appName != null) print('📛 Setting app name → $appName');
 
-  // ── 1. Patch lib/main.dart ───────────────────────────────────────────────
+  // ── 1. Patch lib/main.dart ────────────────────────────────────────────
   final mainFile = File('lib/main.dart');
   if (!await mainFile.exists()) {
     stderr.writeln(
@@ -120,7 +106,7 @@ Future<void> main(List<String> args) async {
   await mainFile.writeAsString(source);
   print('✅ lib/main.dart updated');
 
-  // ── 1a. Update pubspec.yaml if app name is provided ─────────────────────
+  // ── 1a. Update pubspec.yaml ─────────────────────────────────────────
   if (appName != null) {
     // Generate Dart package name from app name
     final packageName = appName
@@ -141,9 +127,8 @@ Future<void> main(List<String> args) async {
     }
   }
 
-  // ── 1b. Patch Android app label ──────────────────────────────────────────
+  // ── 1b. Patch Android app label ─────────────────────────────────────
   if (appName != null) {
-    // Android: android/app/src/main/AndroidManifest.xml  android:label="..."
     final manifestFile = File('android/app/src/main/AndroidManifest.xml');
     if (await manifestFile.exists()) {
       var manifest = await manifestFile.readAsString();
@@ -155,7 +140,7 @@ Future<void> main(List<String> args) async {
       print('✅ AndroidManifest.xml label updated');
     }
 
-    // iOS: ios/Runner/Info.plist  CFBundleDisplayName
+    // iOS: Info.plist CFBundleDisplayName
     final plistFile = File('ios/Runner/Info.plist');
     if (await plistFile.exists()) {
       var plist = await plistFile.readAsString();
@@ -168,14 +153,12 @@ Future<void> main(List<String> args) async {
     }
   }
 
-  // ── 2. Fetch favicon ─────────────────────────────────────────────────────
+  // ── 2. Fetch favicon ─────────────────────────────────────────────────
   await Directory('assets/icon').create(recursive: true);
-  final iconPath = 'assets/icon/icon.png';
+  const iconPath = 'assets/icon/icon.png';
 
   bool iconSaved = false;
 
-  // Try /favicon.ico → convert via Google's favicon service for a PNG
-  // Prefer Google's high-res favicon API
   final googleFaviconUrl =
       'https://www.google.com/s2/favicons?domain=${uri.host}&sz=256';
 
@@ -195,21 +178,16 @@ Future<void> main(List<String> args) async {
   }
 
   if (!iconSaved) {
-    // Try fetching the HTML and parsing <link rel="icon"> tags
     try {
       print('🌐 Trying HTML favicon discovery…');
       final pageResp = await http.get(uri).timeout(const Duration(seconds: 10));
       if (pageResp.statusCode == 200) {
         final html = pageResp.body;
-        final iconLinks = RegExp(
-          r'<link[^>]*rel=[\'
-          "](.*?icon.*?)[\'"
-          '][^>]*href=[\'"]([^"\']+)[\'"]',
-          caseSensitive: false,
-        ).allMatches(html);
+        final iconLinks = RegExp(r"""<link[^>]*rel=['"]([^'"]*icon[^'"]*)['"
+][^>]*href=['"]([^'"]+)['"]""", caseSensitive: false).allMatches(html);
 
         for (final match in iconLinks) {
-          var href = match.group(1)!;
+          var href = match.group(2)!;
           if (href.startsWith('//')) href = '${uri.scheme}:$href';
           if (!href.startsWith('http')) {
             href = '${uri.scheme}://${uri.host}$href';
@@ -237,7 +215,7 @@ Future<void> main(List<String> args) async {
     print('   You can manually place a PNG at: assets/icon/icon.png');
   }
 
-  // ── 3. Regenerate launcher icons ─────────────────────────────────────────
+  // ── 3. Regenerate launcher icons ─────────────────────────────────────
   if (iconSaved) {
     print('\n🔨 Regenerating launcher icons…');
     final result = await Process.run('dart', [
@@ -255,7 +233,6 @@ Future<void> main(List<String> args) async {
   print('\n🚀 Done! Now run:  flutter run');
 }
 
-/// Interactive prompts for app name
 Future<String?> _promptForAppName() async {
   stdout.write('📛 Enter app name: ');
   final input = stdin.readLineSync()?.trim();
@@ -268,18 +245,15 @@ Future<String?> _promptForAppName() async {
   return input;
 }
 
-/// Update app name and package name across all configuration files
 Future<void> _updateAppName(String appName) async {
   print('📛 Updating app name → $appName');
 
-  // Convert app name to valid Dart package name (lowercase, replace spaces with underscores)
   var packageName = appName
       .toLowerCase()
       .replaceAll(RegExp(r'[^a-z0-9_]+'), '_')
       .replaceAll(RegExp(r'^_+|_+$'), '');
 
-  // Check for reserved names that conflict with dependencies
-  final reservedNames = {
+  const reservedNames = {
     'flutter',
     'flutter_test',
     'flutter_lints',
@@ -303,7 +277,7 @@ Future<void> _updateAppName(String appName) async {
 
   print('   Dart package name → $packageName');
 
-  // ── 1. Update pubspec.yaml ────────────────────────────────────────────────
+  // ── 1. Update pubspec.yaml ──────────────────────────────────────────
   final pubspecFile = File('pubspec.yaml');
   if (!await pubspecFile.exists()) {
     stderr.writeln(
@@ -317,7 +291,7 @@ Future<void> _updateAppName(String appName) async {
   await pubspecFile.writeAsString(pubspec);
   print('✅ pubspec.yaml name updated');
 
-  // ── 2. Update lib/main.dart ───────────────────────────────────────────────
+  // ── 2. Update lib/main.dart ─────────────────────────────────────────
   final mainFile = File('lib/main.dart');
   if (await mainFile.exists()) {
     var source = await mainFile.readAsString();
@@ -332,7 +306,7 @@ Future<void> _updateAppName(String appName) async {
     }
   }
 
-  // ── 3. Update Android app label ──────────────────────────────────────────
+  // ── 3. Update Android app label ─────────────────────────────────────
   final manifestFile = File('android/app/src/main/AndroidManifest.xml');
   if (await manifestFile.exists()) {
     var manifest = await manifestFile.readAsString();
@@ -344,7 +318,7 @@ Future<void> _updateAppName(String appName) async {
     print('✅ Android app label updated');
   }
 
-  // ── 4. Update iOS app name ───────────────────────────────────────────────
+  // ── 4. Update iOS app name ──────────────────────────────────────────
   final plistFile = File('ios/Runner/Info.plist');
   if (await plistFile.exists()) {
     var plist = await plistFile.readAsString();
@@ -359,7 +333,6 @@ Future<void> _updateAppName(String appName) async {
   print('\n✨ App name updated successfully!');
 }
 
-/// Interactive prompts for package ID
 Future<String?> _promptForPackageId() async {
   stdout.write('📦 Enter package ID (e.g., com.example.app): ');
   final input = stdin.readLineSync()?.trim();
@@ -380,11 +353,10 @@ Future<String?> _promptForPackageId() async {
   return input;
 }
 
-/// Update package ID (Android/iOS bundle identifier) across all configuration files
 Future<void> _updatePackageId(String packageId) async {
   print('📦 Updating package ID → $packageId');
 
-  // ── Update Android package ID ────────────────────────────────────────────
+  // ── Update Android package ID ───────────────────────────────────────
   final androidBuildFile = File('android/app/build.gradle.kts');
   if (await androidBuildFile.exists()) {
     var androidBuild = await androidBuildFile.readAsString();
@@ -396,7 +368,7 @@ Future<void> _updatePackageId(String packageId) async {
     print('✅ Android applicationId updated');
   }
 
-  // ── Update iOS package ID ────────────────────────────────────────────────
+  // ── Update iOS package ID ───────────────────────────────────────────
   final iosPbxprojFile = File('ios/Runner.xcodeproj/project.pbxproj');
   if (await iosPbxprojFile.exists()) {
     var pbxproj = await iosPbxprojFile.readAsString();

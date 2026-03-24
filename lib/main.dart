@@ -1,36 +1,20 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 import 'package:webview_flutter_android/webview_flutter_android.dart';
 import 'package:webview_flutter_wkwebview/webview_flutter_wkwebview.dart';
-import 'package:flutter/foundation.dart';
 
-// ─8─8─8─8─8─8─8─8─8─8─8─8─8─8─8─8─8─8─8─8─8─8─8─8─8─8─8─8─8─8─8─8─8─8─8─8─8─8─8─8─8─8─8
-//  CONFIGURE YOUR URL HERE
-//  Or run:  dart run scripts/set_url.dart https://example.com
-// ─*─*─*─*─*─*─*─*─*─*─*─*─*─*─*─*─*─*─*─*─*─*─*─*─*─*─*─*─*─*─*─*─*─*─*─*─*─*─*─*─*─*─*
 const String kHomeUrl = 'https://flutter.dev';
-// ─────────────────────────────────────────────
-
-// if you bore i am recommending a good anime to watch "Link click" very interesting anime about a guy who can enter photos and experience the moment when the photo was taken, it has 12 episodes and is very emotional and has a good story, i really recommend it to everyone who loves anime with good story and emotional moments
-
-//  APP LAUNCHER NAME — shown under the icon on the home screen
 const String kAppName = 'URL to App';
-// ─────────────────────────────────────────────
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // Register the correct WebView platform implementation for Android and iOS
-  switch (defaultTargetPlatform) {
-    case TargetPlatform.android:
-      WebViewPlatform.instance = AndroidWebViewPlatform();
-      break;
-    case TargetPlatform.iOS:
-      WebViewPlatform.instance = WebKitWebViewPlatform();
-      break;
-    default:
-      break;
+  if (defaultTargetPlatform == TargetPlatform.android) {
+    WebViewPlatform.instance = AndroidWebViewPlatform();
+  } else if (defaultTargetPlatform == TargetPlatform.iOS) {
+    WebViewPlatform.instance = WebKitWebViewPlatform();
   }
 
   runApp(const MyApp());
@@ -60,15 +44,11 @@ class WebAppShell extends StatefulWidget {
   State<WebAppShell> createState() => _WebAppShellState();
 }
 
-class _WebAppShellState extends State<WebAppShell>
-    with AutomaticKeepAliveClientMixin {
+class _WebAppShellState extends State<WebAppShell> {
   late final WebViewController _controller;
   bool _isLoading = true;
   String _currentUrl = kHomeUrl;
   String? _errorMessage;
-
-  @override
-  bool get wantKeepAlive => true;
 
   @override
   void initState() {
@@ -111,25 +91,16 @@ class _WebAppShellState extends State<WebAppShell>
       ..loadRequest(Uri.parse(kHomeUrl));
   }
 
-  /// Returns true if [url] is considered the "home" — i.e. it points to the
-  /// same origin root as [kHomeUrl] (with or without trailing slash).
   bool _isHomePage(String url) {
     try {
       final home = Uri.parse(kHomeUrl);
       final current = Uri.parse(url);
-
-      // Same scheme + host + port?
-      if (home.scheme != current.scheme) return false;
-      if (home.host != current.host) return false;
-      if (home.port != current.port) return false;
-
-      // The home URL's path defines the "root" for this app.
-      // Normalise by stripping trailing slashes.
-      String normHome = home.path.replaceAll(RegExp(r'/+$'), '');
-      String normCurrent = current.path.replaceAll(RegExp(r'/+$'), '');
-      if (normHome.isEmpty) normHome = '';
-      if (normCurrent.isEmpty) normCurrent = '';
-
+      if (home.scheme != current.scheme ||
+          home.host != current.host ||
+          home.port != current.port)
+        return false;
+      final normHome = home.path.replaceAll(RegExp(r'/+$'), '');
+      final normCurrent = current.path.replaceAll(RegExp(r'/+$'), '');
       return normHome == normCurrent;
     } catch (_) {
       return false;
@@ -137,23 +108,11 @@ class _WebAppShellState extends State<WebAppShell>
   }
 
   Future<bool> _onWillPop() async {
-    // If we can go back in webview history → go back.
     if (await _controller.canGoBack()) {
-      // But only if going back doesn't take us *off* the home page.
-      // We let the WebView go back; if the resulting page is home and the
-      // user presses back again, we'll then show the exit dialog.
       _controller.goBack();
-      return false; // don't pop the Flutter route
+      return false;
     }
-
-    // We're at the top of the webview history.
-    // If current page is (or is below) home → prompt exit.
-    if (_isHomePage(_currentUrl)) {
-      return await _showExitDialog();
-    }
-
-    // Somehow at top of history but not on home (e.g. navigated away with
-    // JS replace). Load home instead of exiting.
+    if (_isHomePage(_currentUrl)) return await _showExitDialog();
     _controller.loadRequest(Uri.parse(kHomeUrl));
     return false;
   }
